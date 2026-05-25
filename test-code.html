@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Schlafzimmer Schach – WebXR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.5.0/aframe.min.js"></script>
+  <style>
+    body { margin: 0; background: #000; font-family: monospace; }
+    #ui-overlay {
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,8,20,0.88);
+      border: 1px solid rgba(255,220,100,0.35);
+      border-radius: 10px;
+      color: #f5e6c0;
+      padding: 10px 22px;
+      z-index: 999;
+      text-align: center;
+      font-size: 14px;
+      pointer-events: none;
+      min-width: 260px;
+      backdrop-filter: blur(8px);
+    }
+    #status { font-size: 15px; font-weight: bold; color: #ffd97a; }
+    #hint  { font-size: 11px; color: #a89060; margin-top: 3px; }
+    #move-log {
+      position: fixed; bottom: 16px; left: 16px;
+      background: rgba(10,8,20,0.82);
+      border: 1px solid rgba(255,220,100,0.2);
+      border-radius: 8px;
+      color: #c8b87a;
+      padding: 8px 14px;
+      z-index: 999;
+      font-size: 12px;
+      max-width: 200px;
+      max-height: 140px;
+      overflow-y: auto;
+      backdrop-filter: blur(6px);
+    }
+    #move-log h4 { margin: 0 0 4px; color: #ffd97a; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div id="ui-overlay">
+  <div id="status">Dein Zug (Weiß)</div>
+  <div id="hint">Klicke eine Figur, dann ein Zielfeld</div>
+</div>
+<div id="move-log">
+  <h4>Züge</h4>
+  <div id="log-entries"></div>
+</div>
+
+<a-scene background="color: #1a1025" renderer="antialias: true; colorManagement: true" vr-mode-ui="enabled: true">
+
+  <!-- Assets -->
+  <a-assets>
+    <!-- Procedurally built via geometry -->
+  </a-assets>
+
+  <!-- ===== LIGHTING ===== -->
+  <a-light type="ambient" color="#3a2e55" intensity="0.55"></a-light>
+  <!-- Ceiling lamp -->
+  <a-light type="point" color="#ffe8a0" intensity="1.1" position="0 2.6 0" distance="8" decay="1.5"></a-light>
+  <!-- Warm bedside -->
+  <a-light type="point" color="#ff9940" intensity="0.5" position="-2.8 1.1 -2.5" distance="3" decay="2"></a-light>
+  <!-- Cool moonlight window -->
+  <a-light type="directional" color="#a0c0ff" intensity="0.3" position="3 3 1"></a-light>
+
+  <!-- ===== ROOM ===== -->
+  <!-- Floor – parquet -->
+  <a-plane rotation="-90 0 0" width="8" height="8" position="0 0 0"
+    material="color:#5c3d1e; roughness:0.85; metalness:0.05"
+    shadow="cast:false; receive:true"></a-plane>
+  <!-- Subtle parquet lines -->
+  <a-entity position="0 0.001 0" rotation="-90 0 0">
+    <a-entity id="parquet"></a-entity>
+  </a-entity>
+
+  <!-- Ceiling -->
+  <a-plane rotation="90 0 0" width="8" height="8" position="0 3 0"
+    material="color:#2a2035; roughness:1"></a-plane>
+
+  <!-- Walls -->
+  <!-- Back wall -->
+  <a-plane rotation="0 0 0" width="8" height="3" position="0 1.5 -4"
+    material="color:#2e2545; roughness:0.9"></a-plane>
+  <!-- Left wall -->
+  <a-plane rotation="0 90 0" width="8" height="3" position="-4 1.5 0"
+    material="color:#2a2040; roughness:0.9"></a-plane>
+  <!-- Right wall -->
+  <a-plane rotation="0 -90 0" width="8" height="3" position="4 1.5 0"
+    material="color:#2a2040; roughness:0.9"></a-plane>
+  <!-- Front wall (behind camera) -->
+  <a-plane rotation="0 180 0" width="8" height="3" position="0 1.5 4"
+    material="color:#2e2545; roughness:0.9"></a-plane>
+
+  <!-- Skirting boards -->
+  <a-box position="0 0.06 -3.97" width="8" height="0.12" depth="0.04" material="color:#1a1428"></a-box>
+  <a-box position="-3.97 0.06 0" width="0.04" height="0.12" depth="8" material="color:#1a1428"></a-box>
+  <a-box position="3.97 0.06 0" width="0.04" height="0.12" depth="8" material="color:#1a1428"></a-box>
+
+  <!-- Window on right wall -->
+  <a-box position="4 1.6 -1" width="0.05" height="1.4" depth="1.0"
+    material="color:#a0d0ff; opacity:0.18; transparent:true"></a-box>
+  <!-- Window frame -->
+  <a-box position="3.98 1.6 -1" width="0.06" height="1.45" depth="1.05"
+    material="color:#1a1428; roughness:1" wireframe="false"></a-box>
+  <!-- Curtains -->
+  <a-box position="3.75 1.6 -0.35" width="0.1" height="1.6" depth="0.6"
+    material="color:#4a2060; roughness:1; opacity:0.9"></a-box>
+  <a-box position="3.75 1.6 -1.65" width="0.1" height="1.6" depth="0.6"
+    material="color:#4a2060; roughness:1; opacity:0.9"></a-box>
+
+  <!-- Ceiling lamp -->
+  <a-cylinder position="0 2.98 0" radius="0.06" height="0.3" material="color:#888888"></a-cylinder>
+  <a-sphere position="0 2.7 0" radius="0.14" material="color:#ffe8a0; emissive:#ffe060; emissiveIntensity:0.8"></a-sphere>
+
+  <!-- ===== BED ===== -->
+  <!-- Bed frame -->
+  <a-box position="-2.2 0.22 -2.8" width="1.6" height="0.26" depth="2.2"
+    material="color:#3d2510; roughness:0.8; metalness:0.1" shadow="cast:true; receive:true"></a-box>
+  <!-- Mattress -->
+  <a-box position="-2.2 0.42 -2.8" width="1.45" height="0.18" depth="2.0"
+    material="color:#e8dcc8; roughness:0.95"></a-box>
+  <!-- Pillow -->
+  <a-box position="-2.2 0.56 -3.65" width="1.1" height="0.14" depth="0.45"
+    material="color:#f0ebe0; roughness:1"></a-box>
+  <!-- Blanket -->
+  <a-box position="-2.2 0.54 -2.5" width="1.42" height="0.1" depth="1.3"
+    material="color:#6040a0; roughness:0.9"></a-box>
+  <!-- Headboard -->
+  <a-box position="-2.2 0.9 -3.88" width="1.6" height="0.9" depth="0.1"
+    material="color:#3d2510; roughness:0.75"></a-box>
+  <!-- Bed legs -->
+  <a-cylinder position="-1.45 0.11 -1.7" radius="0.05" height="0.22" material="color:#2a1a08"></a-cylinder>
+  <a-cylinder position="-2.95 0.11 -1.7" radius="0.05" height="0.22" material="color:#2a1a08"></a-cylinder>
+  <a-cylinder position="-1.45 0.11 -3.88" radius="0.05" height="0.22" material="color:#2a1a08"></a-cylinder>
+  <a-cylinder position="-2.95 0.11 -3.88" radius="0.05" height="0.22" material="color:#2a1a08"></a-cylinder>
+  <!-- Bedside table -->
+  <a-box position="-3.3 0.45 -3.0" width="0.55" height="0.5" depth="0.55"
+    material="color:#4a2e14; roughness:0.8"></a-box>
+  <!-- Bedside lamp -->
+  <a-cylinder position="-3.3 0.82 -3.0" radius="0.03" height="0.3" material="color:#aaaaaa"></a-cylinder>
+  <a-cone position="-3.3 1.05 -3.0" radius-bottom="0.18" radius-top="0.05" height="0.22"
+    material="color:#ffe8c0; emissive:#ff9030; emissiveIntensity:0.3" open-ended="false"></a-cone>
+
+  <!-- ===== WARDROBE (Kleiderschrank) ===== -->
+  <a-box position="2.6 1.1 -3.5" width="1.6" height="2.2" depth="0.65"
+    material="color:#4a3520; roughness:0.75"></a-box>
+  <!-- Wardrobe doors lines -->
+  <a-box position="2.22 1.1 -3.16" width="0.02" height="2.1" depth="0.02"
+    material="color:#2a1a08"></a-box>
+  <a-box position="2.98 1.1 -3.16" width="0.02" height="2.1" depth="0.02"
+    material="color:#2a1a08"></a-box>
+  <!-- Handles -->
+  <a-cylinder position="2.34 1.1 -3.17" radius="0.025" height="0.18"
+    rotation="0 0 90" material="color:#c0a040; metalness:0.9; roughness:0.1"></a-cylinder>
+  <a-cylinder position="2.86 1.1 -3.17" radius="0.025" height="0.18"
+    rotation="0 0 90" material="color:#c0a040; metalness:0.9; roughness:0.1"></a-cylinder>
+  <!-- Wardrobe top -->
+  <a-box position="2.6 2.25 -3.5" width="1.65" height="0.1" depth="0.7"
+    material="color:#3a2510; roughness:0.8"></a-box>
+
+  <!-- ===== DESK (Pult) ===== -->
+  <!-- Desk surface -->
+  <a-box position="2.5 0.76 0.5" width="1.6" height="0.06" depth="0.75"
+    material="color:#5a3a1a; roughness:0.7; metalness:0.05" shadow="cast:true; receive:true"></a-box>
+  <!-- Desk legs -->
+  <a-box position="1.75 0.38 0.18" width="0.07" height="0.76" depth="0.07" material="color:#3a2510"></a-box>
+  <a-box position="3.25 0.38 0.18" width="0.07" height="0.76" depth="0.07" material="color:#3a2510"></a-box>
+  <a-box position="1.75 0.38 0.82" width="0.07" height="0.76" depth="0.07" material="color:#3a2510"></a-box>
+  <a-box position="3.25 0.38 0.82" width="0.07" height="0.76" depth="0.07" material="color:#3a2510"></a-box>
+  <!-- Desk chair -->
+  <a-box position="2.5 0.48 1.45" width="0.55" height="0.06" depth="0.55"
+    material="color:#2a2040; roughness:0.9"></a-box>
+  <a-box position="2.5 0.24 1.45" width="0.07" height="0.48" depth="0.07" material="color:#1a1428"></a-box>
+  <a-box position="2.5 0.24 1.7"  width="0.07" height="0.48" depth="0.07" material="color:#1a1428"></a-box>
+  <a-box position="2.25 0.24 1.45" width="0.07" height="0.48" depth="0.07" material="color:#1a1428"></a-box>
+  <a-box position="2.75 0.24 1.45" width="0.07" height="0.48" depth="0.07" material="color:#1a1428"></a-box>
+  <!-- Chair back -->
+  <a-box position="2.5 0.82 1.7" width="0.52" height="0.6" depth="0.05"
+    material="color:#2a2040; roughness:0.9"></a-box>
+  <!-- Monitor on desk -->
+  <a-box position="2.5 1.1 0.22" width="0.7" height="0.42" depth="0.04"
+    material="color:#111118; roughness:0.5; metalness:0.4"></a-box>
+  <a-box position="2.5 0.98 0.26" width="0.08" height="0.16" depth="0.08"
+    material="color:#111118"></a-box>
+  <!-- Monitor screen glow -->
+  <a-box position="2.5 1.1 0.21" width="0.64" height="0.36" depth="0.01"
+    material="color:#1040a0; emissive:#1040a0; emissiveIntensity:0.4; opacity:0.9"></a-box>
+  <!-- Desk items: book -->
+  <a-box position="1.9 0.82 0.55" width="0.22" height="0.06" depth="0.3"
+    material="color:#8b1a1a; roughness:0.9"></a-box>
+  <!-- Pencil cup -->
+  <a-cylinder position="3.1 0.86 0.6" radius="0.045" height="0.14"
+    material="color:#888888; metalness:0.5"></a-cylinder>
+
+  <!-- ===== PICTURE on back wall ===== -->
+  <a-box position="0 1.8 -3.97" width="0.9" height="0.65" depth="0.04"
+    material="color:#2a2035; roughness:0.7"></a-box>
+  <a-box position="0 1.8 -3.94" width="0.8" height="0.55" depth="0.01"
+    material="color:#1a3a6a; emissive:#1a3a6a; emissiveIntensity:0.15"></a-box>
+  <!-- Frame -->
+  <a-box position="0 1.8 -3.95" width="0.84" height="0.59" depth="0.02"
+    material="color:#c0a040; metalness:0.7; roughness:0.3" wireframe="false"
+    geometry="primitive:box"></a-box>
+
+  <!-- ===== CARPET ===== -->
+  <a-plane rotation="-90 0 0" width="2.4" height="2.4" position="0 0.005 0.3"
+    material="color:#3d2060; roughness:1; opacity:0.9"></a-plane>
+
+  <!-- ===== CHESS TABLE ===== -->
+  <a-box id="chess-table" position="0 0.55 0.3" width="1.0" height="0.06" depth="1.0"
+    material="color:#5a3010; roughness:0.7" shadow="cast:true; receive:true"></a-box>
+  <!-- Table legs -->
+  <a-cylinder position="-0.44 0.27 -0.14" radius="0.03" height="0.55" material="color:#3a1e08"></a-cylinder>
+  <a-cylinder position="0.44 0.27 -0.14"  radius="0.03" height="0.55" material="color:#3a1e08"></a-cylinder>
+  <a-cylinder position="-0.44 0.27 0.74"  radius="0.03" height="0.55" material="color:#3a1e08"></a-cylinder>
+  <a-cylinder position="0.44 0.27 0.74"   radius="0.03" height="0.55" material="color:#3a1e08"></a-cylinder>
+
+  <!-- ===== CHESS BOARD ===== -->
+  <a-entity id="chessboard" position="0 0.585 0.3"></a-entity>
+
+  <!-- ===== CHESS PIECES CONTAINER ===== -->
+  <a-entity id="chess-pieces"></a-entity>
+
+  <!-- ===== SELECTION HIGHLIGHT ===== -->
+  <a-box id="select-highlight" visible="false"
+    width="0.115" height="0.005" depth="0.115"
+    material="color:#ffdd00; emissive:#ffdd00; emissiveIntensity:0.9; opacity:0.7; transparent:true">
+  </a-box>
+  <!-- Move highlights container -->
+  <a-entity id="move-highlights"></a-entity>
+
+  <!-- ===== PLAYER (camera rig) ===== -->
+  <a-entity id="rig" position="0 0 1.6">
+    <a-camera id="camera" look-controls="pointerLockEnabled: false" wasd-controls="enabled: true"
+      fov="75" near="0.1" far="100">
+      <a-cursor color="#ffd97a" fuse="false" raycaster="objects: .clickable"
+        material="color:#ffd97a; opacity:0.8"></a-cursor>
+    </a-camera>
+  </a-entity>
+
+</a-scene>
+
+<script>
+// =====================================================
+// CHESS ENGINE (simplified but rule-complete)
+// =====================================================
+const FILES = 'abcdefgh';
+const PIECES = { K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙', k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟' };
+
+function initialBoard() {
+  // FEN-style: uppercase = white, lowercase = black
+  return [
+    ['r','n','b','q','k','b','n','r'],
+    ['p','p','p','p','p','p','p','p'],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    [null,null,null,null,null,null,null,null],
+    ['P','P','P','P','P','P','P','P'],
+    ['R','N','B','Q','K','B','N','R']
+  ];
+}
+
+const state = {
+  board: initialBoard(),
+  turn: 'w', // 'w' or 'b'
+  selected: null, // {row, col}
+  validMoves: [],
+  enPassant: null, // {row, col}
+  castling: { wK: true, wQ: true, bK: true, bQ: true },
+  gameOver: false,
+  check: false,
+  moveHistory: []
+};
+
+function isWhite(p) { return p && p === p.toUpperCase(); }
+function isBlack(p) { return p && p === p.toLowerCase(); }
+function same(p1, p2) { return (isWhite(p1) && isWhite(p2)) || (isBlack(p1) && isBlack(p2)); }
+function opp(p1, p2)  { return p1 && p2 && !same(p1, p2); }
+
+function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+// Raw moves (ignoring check)
+function rawMoves(board, r, c, enPassant, castling) {
+  const p = board[r][c];
+  if (!p) return [];
+  const moves = [];
+  const white = isWhite(p);
+  const type = p.toUpperCase();
+
+  const slide = (dr, dc) => {
+    let nr = r + dr, nc = c + dc;
+    while (inBounds(nr, nc)) {
+      if (board[nr][nc]) {
+        if (opp(p, board[nr][nc])) moves.push([nr, nc]);
+        break;
+      }
+      moves.push([nr, nc]);
+      nr += dr; nc += dc;
+    }
+  };
+
+  if (type === 'P') {
+    const dir = white ? -1 : 1;
+    const start = white ? 6 : 1;
+    // Forward
+    if (inBounds(r+dir, c) && !board[r+dir][c]) {
+      moves.push([r+dir, c]);
+      if (r === start && !board[r+2*dir][c]) moves.push([r+2*dir, c]);
+    }
+    // Captures
+    for (const dc of [-1, 1]) {
+      if (inBounds(r+dir, c+dc)) {
+        if (opp(p, board[r+dir][c+dc])) moves.push([r+dir, c+dc]);
+        if (enPassant && enPassant.row === r+dir && enPassant.col === c+dc) moves.push([r+dir, c+dc]);
+      }
+    }
+  } else if (type === 'N') {
+    for (const [dr, dc] of [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]) {
+      const nr = r+dr, nc = c+dc;
+      if (inBounds(nr, nc) && !same(p, board[nr][nc])) moves.push([nr, nc]);
+    }
+  } else if (type === 'K') {
+    for (const [dr, dc] of [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]) {
+      const nr = r+dr, nc = c+dc;
+      if (inBounds(nr, nc) && !same(p, board[nr][nc])) moves.push([nr, nc]);
+    }
+    // Castling
+    const rank = white ? 7 : 0;
+    if (r === rank && c === 4) {
+      if ((white ? castling.wK : castling.bK) && !board[rank][5] && !board[rank][6])
+        moves.push([rank, 6]);
+      if ((white ? castling.wQ : castling.bQ) && !board[rank][3] && !board[rank][2] && !board[rank][1])
+        moves.push([rank, 2]);
+    }
+  } else if (type === 'R') {
+    for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) slide(dr, dc);
+  } else if (type === 'B') {
+    for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) slide(dr, dc);
+  } else if (type === 'Q') {
+    for (const d of [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]]) slide(d[0], d[1]);
+  }
+  return moves;
+}
+
+function kingPos(board, white) {
+  const k = white ? 'K' : 'k';
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (board[r][c] === k) return [r, c];
+  return null;
+}
+
+function inCheck(board, white, enPassant, castling) {
+  const kp = kingPos(board, white);
+  if (!kp) return false;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (!p) continue;
+      if (white ? isBlack(p) : isWhite(p)) {
+        const ms = rawMoves(board, r, c, enPassant, castling);
+        if (ms.some(([mr, mc]) => mr === kp[0] && mc === kp[1])) return true;
+      }
+    }
+  return false;
+}
+
+function applyMove(board, fr, fc, tr, tc, enPassant, castling) {
+  const nb = board.map(r => [...r]);
+  const p = nb[fr][fc];
+  const white = isWhite(p);
+  const type = p.toUpperCase();
+
+  nb[tr][tc] = p;
+  nb[fr][fc] = null;
+
+  // En passant capture
+  if (type === 'P' && enPassant && tr === enPassant.row && tc === enPassant.col) {
+    nb[fr][tc] = null;
+  }
+  // Pawn promotion
+  if (type === 'P' && (tr === 0 || tr === 7)) {
+    nb[tr][tc] = white ? 'Q' : 'q';
+  }
+  // Castling rook
+  if (type === 'K') {
+    const rank = white ? 7 : 0;
+    if (fc === 4 && tc === 6) { nb[rank][5] = nb[rank][7]; nb[rank][7] = null; }
+    if (fc === 4 && tc === 2) { nb[rank][3] = nb[rank][0]; nb[rank][0] = null; }
+  }
+  return nb;
+}
+
+function legalMoves(board, r, c, enPassant, castling) {
+  const p = board[r][c];
+  if (!p) return [];
+  const white = isWhite(p);
+  return rawMoves(board, r, c, enPassant, castling).filter(([tr, tc]) => {
+    const nb = applyMove(board, r, c, tr, tc, enPassant, castling);
+    return !inCheck(nb, white, null, castling);
+  });
+}
+
+function allLegalMoves(board, white, enPassant, castling) {
+  const all = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (!p) continue;
+      if (white ? !isWhite(p) : !isBlack(p)) continue;
+      const ms = legalMoves(board, r, c, enPassant, castling);
+      ms.forEach(([tr, tc]) => all.push({fr: r, fc: c, tr, tc}));
+    }
+  return all;
+}
+
+// =====================================================
+// AI (Minimax depth 3 with material eval)
+// =====================================================
+const MATERIAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 20000 };
+
+function evalBoard(board) {
+  let score = 0;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (!p) continue;
+      const v = MATERIAL[p.toUpperCase()] || 0;
+      score += isWhite(p) ? v : -v;
+    }
+  return score;
+}
+
+function minimax(board, depth, alpha, beta, maximizing, enPassant, castling) {
+  const white = maximizing;
+  const moves = allLegalMoves(board, white, enPassant, castling);
+  if (depth === 0 || moves.length === 0) return evalBoard(board);
+
+  if (maximizing) {
+    let best = -Infinity;
+    for (const m of moves) {
+      const nb = applyMove(board, m.fr, m.fc, m.tr, m.tc, enPassant, castling);
+      best = Math.max(best, minimax(nb, depth-1, alpha, beta, false, null, castling));
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const m of moves) {
+      const nb = applyMove(board, m.fr, m.fc, m.tr, m.tc, enPassant, castling);
+      best = Math.min(best, minimax(nb, depth-1, alpha, beta, true, null, castling));
+      beta = Math.min(beta, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+}
+
+function bestAiMove(board, enPassant, castling) {
+  const moves = allLegalMoves(board, false, enPassant, castling);
+  if (!moves.length) return null;
+  let best = Infinity, bestMove = null;
+  for (const m of moves) {
+    const nb = applyMove(board, m.fr, m.fc, m.tr, m.tc, enPassant, castling);
+    const score = minimax(nb, 2, -Infinity, Infinity, true, null, castling);
+    if (score < best) { best = score; bestMove = m; }
+  }
+  return bestMove;
+}
+
+// =====================================================
+// 3D RENDERING
+// =====================================================
+const BOARD_Y = 0.585;
+const BOARD_CENTER = { x: 0, z: 0.3 };
+const SQ = 0.115; // square size
+
+function squareToXZ(row, col) {
+  // row 7 = rank 1 (white side, near player), row 0 = rank 8 (far)
+  const x = BOARD_CENTER.x + (col - 3.5) * SQ;
+  const z = BOARD_CENTER.z + (row - 3.5) * SQ;
+  return { x, z };
+}
+
+let squareEntities = {};
+let pieceEntities = {};
+
+function buildBoard() {
+  const boardEl = document.getElementById('chessboard');
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const isLight = (r + c) % 2 === 0;
+      const pos = squareToXZ(r, c);
+      const sq = document.createElement('a-box');
+      sq.setAttribute('width', SQ - 0.004);
+      sq.setAttribute('height', 0.008);
+      sq.setAttribute('depth', SQ - 0.004);
+      sq.setAttribute('position', `${pos.x} 0 ${pos.z}`);
+      sq.setAttribute('material', `color:${isLight ? '#f0d9b5' : '#b58863'}; roughness:0.8`);
+      sq.setAttribute('class', 'clickable');
+      sq.setAttribute('data-row', r);
+      sq.setAttribute('data-col', c);
+      sq.addEventListener('click', () => onSquareClick(r, c));
+      boardEl.appendChild(sq);
+      squareEntities[`${r},${c}`] = sq;
+    }
+  }
+}
+
+function pieceHeight(type) {
+  const h = { P: 0.055, N: 0.07, B: 0.08, R: 0.06, Q: 0.095, K: 0.1 };
+  return h[type.toUpperCase()] || 0.06;
+}
+function pieceColor(p) { return isWhite(p) ? '#f5f0e0' : '#1a1018'; }
+function pieceEmissive(p) { return isWhite(p) ? '#fffff0' : '#000000'; }
+
+function buildPiece(p, r, c) {
+  const type = p.toUpperCase();
+  const pos = squareToXZ(r, c);
+  const yBase = BOARD_Y + 0.012;
+  const h = pieceHeight(type);
+  const col = pieceColor(p);
+  const em = pieceEmissive(p);
+
+  const group = document.createElement('a-entity');
+  group.setAttribute('position', `${pos.x} ${yBase} ${pos.z}`);
+
+  // Base
+  const base = document.createElement('a-cylinder');
+  base.setAttribute('radius', 0.036);
+  base.setAttribute('height', 0.012);
+  base.setAttribute('position', '0 0.006 0');
+  base.setAttribute('material', `color:${col}; emissive:${em}; emissiveIntensity:0.1; roughness:0.5; metalness:0.3`);
+  group.appendChild(base);
+
+  // Body
+  const body = document.createElement('a-cylinder');
+  body.setAttribute('radius', type === 'Q' || type === 'K' ? 0.026 : 0.022);
+  body.setAttribute('height', h * 0.6);
+  body.setAttribute('position', `0 ${0.012 + h*0.3} 0`);
+  body.setAttribute('material', `color:${col}; emissive:${em}; emissiveIntensity:0.05; roughness:0.4; metalness:0.4`);
+  group.appendChild(body);
+
+  // Head
+  const head = document.createElement('a-sphere');
+  head.setAttribute('radius', type === 'K' ? 0.022 : type === 'Q' ? 0.02 : type === 'B' ? 0.018 : type === 'P' ? 0.016 : 0.019);
+  head.setAttribute('position', `0 ${0.012 + h * 0.85} 0`);
+  head.setAttribute('material', `color:${col}; emissive:${em}; emissiveIntensity:0.1; roughness:0.3; metalness:0.5`);
+  group.appendChild(head);
+
+  // Special features
+  if (type === 'K') {
+    const cross = document.createElement('a-box');
+    cross.setAttribute('width', 0.006); cross.setAttribute('height', 0.025); cross.setAttribute('depth', 0.006);
+    cross.setAttribute('position', `0 ${0.012 + h + 0.005} 0`);
+    cross.setAttribute('material', `color:#c0a040; metalness:0.9; roughness:0.2`);
+    group.appendChild(cross);
+  }
+  if (type === 'Q') {
+    const crown = document.createElement('a-cylinder');
+    crown.setAttribute('radius-bottom', 0.022); crown.setAttribute('radius-top', 0.018);
+    crown.setAttribute('height', 0.014); crown.setAttribute('open-ended', false);
+    crown.setAttribute('position', `0 ${0.012 + h * 0.95} 0`);
+    crown.setAttribute('material', `color:${col}; metalness:0.5; roughness:0.3`);
+    group.appendChild(crown);
+  }
+  if (type === 'N') {
+    // Knight head shape
+    const nHead = document.createElement('a-box');
+    nHead.setAttribute('width', 0.018); nHead.setAttribute('height', 0.02); nHead.setAttribute('depth', 0.032);
+    nHead.setAttribute('position', `0 ${0.012 + h * 0.82} 0.005`);
+    nHead.setAttribute('material', `color:${col}; roughness:0.4; metalness:0.4`);
+    group.appendChild(nHead);
+  }
+
+  group.setAttribute('class', 'clickable chess-piece');
+  group.setAttribute('data-row', r);
+  group.setAttribute('data-col', c);
+  group.addEventListener('click', () => onSquareClick(r, c));
+
+  return group;
+}
+
+function renderPieces() {
+  const container = document.getElementById('chess-pieces');
+  // Remove old
+  Object.values(pieceEntities).forEach(e => e.parentNode && e.parentNode.removeChild(e));
+  pieceEntities = {};
+
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = state.board[r][c];
+      if (p) {
+        const el = buildPiece(p, r, c);
+        container.appendChild(el);
+        pieceEntities[`${r},${c}`] = el;
+      }
+    }
+  }
+}
+
+function clearHighlights() {
+  const hl = document.getElementById('move-highlights');
+  while (hl.firstChild) hl.removeChild(hl.firstChild);
+  document.getElementById('select-highlight').setAttribute('visible', false);
+}
+
+function showHighlights(row, col, moves) {
+  const pos = squareToXZ(row, col);
+  const sel = document.getElementById('select-highlight');
+  sel.setAttribute('position', `${pos.x} ${BOARD_Y + 0.015} ${pos.z}`);
+  sel.setAttribute('visible', true);
+
+  const hl = document.getElementById('move-highlights');
+  moves.forEach(([r, c]) => {
+    const p2 = squareToXZ(r, c);
+    const dot = document.createElement('a-cylinder');
+    dot.setAttribute('radius', state.board[r][c] ? 0.05 : 0.022);
+    dot.setAttribute('height', 0.006);
+    dot.setAttribute('position', `${p2.x} ${BOARD_Y + 0.018} ${p2.z}`);
+    dot.setAttribute('material', 'color:#44ff44; emissive:#44ff44; emissiveIntensity:0.6; opacity:0.75; transparent:true');
+    dot.setAttribute('class', 'clickable');
+    dot.setAttribute('data-row', r);
+    dot.setAttribute('data-col', c);
+    dot.addEventListener('click', () => onSquareClick(r, c));
+    hl.appendChild(dot);
+  });
+}
+
+// =====================================================
+// GAME LOGIC
+// =====================================================
+function setStatus(msg, hint) {
+  document.getElementById('status').textContent = msg;
+  document.getElementById('hint').textContent = hint || '';
+}
+
+function addLog(msg) {
+  const el = document.getElementById('log-entries');
+  const d = document.createElement('div');
+  d.textContent = msg;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+function moveNotation(board, fr, fc, tr, tc) {
+  const p = board[fr][fc];
+  const type = p ? p.toUpperCase() : '';
+  const capture = board[tr][tc] ? 'x' : '';
+  return `${type === 'P' ? '' : type}${FILES[fc]}${8-fr}${capture}->${FILES[tc]}${8-tr}`;
+}
+
+function onSquareClick(r, c) {
+  if (state.gameOver || state.turn !== 'w') return;
+
+  const p = state.board[r][c];
+
+  if (state.selected) {
+    // Attempt move
+    const move = state.validMoves.find(([mr, mc]) => mr === r && mc === c);
+    if (move) {
+      doMove(state.selected.row, state.selected.col, r, c, 'w');
+      state.selected = null;
+      clearHighlights();
+
+      if (!state.gameOver) {
+        setStatus('Schwarz denkt...', '');
+        setTimeout(aiMove, 500);
+      }
+    } else if (p && isWhite(p)) {
+      // Re-select
+      state.selected = { row: r, col: c };
+      const ms = legalMoves(state.board, r, c, state.enPassant, state.castling);
+      state.validMoves = ms;
+      clearHighlights();
+      showHighlights(r, c, ms);
+    } else {
+      state.selected = null;
+      clearHighlights();
+    }
+  } else {
+    if (p && isWhite(p)) {
+      state.selected = { row: r, col: c };
+      const ms = legalMoves(state.board, r, c, state.enPassant, state.castling);
+      state.validMoves = ms;
+      clearHighlights();
+      if (ms.length) showHighlights(r, c, ms);
+      else setStatus('Keine gültigen Züge', 'Wähle eine andere Figur');
+    }
+  }
+}
+
+function doMove(fr, fc, tr, tc, side) {
+  const p = state.board[fr][fc];
+  const note = moveNotation(state.board, fr, fc, tr, tc);
+  const label = side === 'w' ? 'Weiß' : 'Schwarz';
+  addLog(`${label}: ${note}`);
+
+  // Update en passant
+  if (p && p.toUpperCase() === 'P' && Math.abs(tr - fr) === 2) {
+    state.enPassant = { row: (fr + tr) / 2, col: fc };
+  } else {
+    state.enPassant = null;
+  }
+
+  // Update castling rights
+  if (p === 'K') { state.castling.wK = false; state.castling.wQ = false; }
+  if (p === 'k') { state.castling.bK = false; state.castling.bQ = false; }
+  if (fr === 7 && fc === 0) state.castling.wQ = false;
+  if (fr === 7 && fc === 7) state.castling.wK = false;
+  if (fr === 0 && fc === 0) state.castling.bQ = false;
+  if (fr === 0 && fc === 7) state.castling.bK = false;
+
+  state.board = applyMove(state.board, fr, fc, tr, tc, state.enPassant, state.castling);
+  state.turn = side === 'w' ? 'b' : 'w';
+
+  renderPieces();
+
+  // Check game state
+  const nextWhite = state.turn === 'w';
+  const moves = allLegalMoves(state.board, nextWhite, state.enPassant, state.castling);
+  const check = inCheck(state.board, nextWhite, state.enPassant, state.castling);
+
+  if (!moves.length) {
+    state.gameOver = true;
+    if (check) {
+      const winner = nextWhite ? 'Schwarz' : 'Weiß';
+      setStatus(`Schachmatt! ${winner} gewinnt! 🏆`, 'Seite neu laden für neues Spiel');
+      addLog(`SCHACHMATT! ${winner} gewinnt!`);
+    } else {
+      setStatus('Patt! Unentschieden.', 'Seite neu laden für neues Spiel');
+      addLog('PATT – Unentschieden');
+    }
+  } else if (check) {
+    state.check = true;
+    setStatus(`${nextWhite ? 'Weiß' : 'Schwarz'} ist im Schach!`,
+              nextWhite ? 'Dein Zug (Weiß)' : '');
+  } else {
+    state.check = false;
+    if (state.turn === 'w') setStatus('Dein Zug (Weiß)', 'Klicke eine Figur, dann ein Zielfeld');
+  }
+}
+
+function aiMove() {
+  if (state.gameOver) return;
+  const m = bestAiMove(state.board, state.enPassant, state.castling);
+  if (m) {
+    doMove(m.fr, m.fc, m.tr, m.tc, 'b');
+    if (!state.gameOver) setStatus('Dein Zug (Weiß)', 'Klicke eine Figur, dann ein Zielfeld');
+  }
+}
+
+// =====================================================
+// INIT
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const scene = document.querySelector('a-scene');
+  scene.addEventListener('loaded', () => {
+    buildBoard();
+    renderPieces();
+    setStatus('Dein Zug (Weiß)', 'Klicke eine Figur, dann ein Zielfeld');
+  });
+});
+</script>
+</body>
+</html>
