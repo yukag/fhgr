@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Verwandle deine Wanderung in ein interaktives Krimi-Abenteuer. Die Bündner Fallakten bieten GPS-Rätsel, AR-Beweise und immersive Hörspiele in den Schweizer Alpen.">
+  <title>Die Bündner Fallakten | GPS-Outdoor-Escape-App Graubünden</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Forest Mist FX -->
+  <div class="mist-container">
+    <div class="mist-cloud"></div>
+    <div class="mist-cloud-2"></div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo" id="nav-brand-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-teal-neon);">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="11" y1="8" x2="11" y2="14"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+        BÜNDNER FALLAKTEN
+        <span class="logo-badge">FS26</span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#about" id="nav-link-about">Das Produkt</a></li>
+          <li><a href="#video" id="nav-link-video">Trailer</a></li>
+          <li><a href="#riddle" id="nav-link-riddle">Erster Hinweis</a></li>
+          <li><a href="#download" id="nav-link-download">App laden</a></li>
+          <li><a href="#download" class="btn-cta-nav" id="nav-btn-cta">Jetzt ermitteln</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="hero-wrapper reveal">
+        <img src="hero.png" alt="Bündner Fallakten Hiker in Swiss Mountains with AR Screen Mockup" class="hero-image">
+        <div class="hero-vignette"></div>
+        <div class="hero-content-overlay">
+          <span class="hero-badge">Outdoor-Escape-App</span>
+          <h1 class="hero-tagline">Deine Wanderung.<br>Dein Fall.<br><span>Graubünden.</span></h1>
+          <a href="#about" class="btn-primary" id="hero-btn-explore">
+            Akte untersuchen 
+            <svg class="arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="content-section" id="about">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-subtitle">Das Abenteuer ruft</span>
+          <h2 class="section-title">Über die Bündner Fallakten</h2>
+        </div>
+
+        <div class="dossier-layout">
+          <!-- Left Column: Detailed Pitch -->
+          <div class="dossier-intro reveal">
+            <h3>Krimi-Kulisse Alpenwelt</h3>
+            <p>
+              Die <strong>„Bündner Fallakten“</strong> verwandeln die malerischen Wanderwege Graubündens in eine packende Kriminal-Kulisse. Deine Wandergruppe begibt sich mit dem Smartphone auf eine echte Spurensuche. 
+            </p>
+            <p>
+              Ausgerüstet mit modernster GPS-Technologie navigiert ihr durch dichte Tannenwälder und felsige Schluchten, um mysteriöse Vorfälle zu rekonstruieren, Beweise zu sammeln und den Täter dingfest zu machen.
+            </p>
+            <div style="margin-top: 10px;">
+              <a href="#riddle" class="btn-primary" id="dossier-btn-riddle" style="background: var(--color-teal); border-color: rgba(34,211,238,0.2);">
+                Erste Spur verfolgen
+              </a>
+            </div>
+          </div>
+
+          <!-- Right Column: Features grid matching visual colors -->
+          <div class="dossier-grid">
+            <!-- GPS Card (Teal) -->
+            <article class="case-folder folder-teal reveal">
+              <div class="case-folder-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+              <span class="folder-tag">KOS-System 01</span>
+              <h4>GPS-Ortung & Routen</h4>
+              <p>Geofenced Checkpoints aktivieren Spuren und Audio-Dossiers automatisch, sobald du dich der Zielkoordinate näherst.</p>
+            </article>
+
+            <!-- Hörspiel Card (Purple) -->
+            <article class="case-folder folder-purple reveal">
+              <div class="case-folder-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </div>
+              <span class="folder-tag">Audio-Akustik 02</span>
+              <h4>Immersive Hörspiele</h4>
+              <p>Atmosphärische Thriller-Szenen, eingesprochen von Profi-Sprechern, ziehen dich akustisch mitten in das Geschehen hinein.</p>
+            </article>
+
+            <!-- Rätsel Card (Rust) -->
+            <article class="case-folder folder-rust reveal">
+              <div class="case-folder-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <span class="folder-tag">Chiffrierung 03</span>
+              <h4>Kryptische Rätsel</h4>
+              <p>Knacke Zahlencodes, analysiere Alibis und löse anspruchsvolle Logikrätsel direkt auf der digitalen Ermittlerkonsole.</p>
+            </article>
+
+            <!-- AR Card (Green) -->
+            <article class="case-folder folder-forest reveal">
+              <div class="case-folder-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+              </div>
+              <span class="folder-tag">AR-Visuell 04</span>
+              <h4>Erweiterte Realität (AR)</h4>
+              <p>Projiziere virtuelle Tatort-Gegenstände, Spuren oder Verdächtigen-Hologramme direkt in die reale Waldumgebung.</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Marketing Video Section -->
+    <section class="content-section" id="video">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-subtitle">Beweismaterial A</span>
+          <h2 class="section-title">Der Fall im Video</h2>
+        </div>
+
+        <div class="video-frame-container reveal" id="video-container">
+          <!-- Custom Play Overlay -->
+          <div class="video-overlay-play" id="video-overlay">
+            <div class="play-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style="transform: translateX(3px);">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+            </div>
+          </div>
+          <!-- HTML5 Video Player -->
+          <video id="marketing-video" class="video-element" preload="metadata">
+            <source src="Challenge A_marketingvideo.mp4" type="video/mp4">
+            Dein Browser unterstützt das Video-Element nicht.
+          </video>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Riddle Section -->
+    <section class="content-section" id="riddle">
+      <div class="container">
+        <div class="section-header reveal">
+          <span class="section-subtitle">Chiffrier-Konsole</span>
+          <h2 class="section-title">Entschlüssele den ersten Hinweis</h2>
+        </div>
+
+        <div class="riddle-box reveal">
+          <div class="riddle-header">
+            <div class="riddle-badge">Dossier #042</div>
+            <h3 style="font-size: 1.2rem; font-family: var(--font-headers);">Militärischer GPS-Frequenzkanal</h3>
+          </div>
+          <div class="riddle-body">
+            <p>
+              Die verschlüsselte Frequenz sperrt den Zugriff auf den ersten Audio-Teaser. Um den Kanal freizuschalten, musst du das <strong>Beweisstück (Evidence Item)</strong> identifizieren.
+            </p>
+            <p style="font-style: italic; border-left: 2px solid var(--color-rust); padding-left: 15px; color: var(--color-text-secondary);">
+              "Der Geysier-Pfad birgt den Code. Analysiere das Gipfelfoto oben im Dossier (Hero-Bild) und gib die Nummer des Beweismittels ein."
+            </p>
+
+            <div class="terminal-interface">
+              <div class="terminal-line">[SYS-CONN] Verbindung hergestellt mit Bündner-Server...</div>
+              <div class="terminal-line">[SYS-INFO] Frequenzschlüssel gesperrt. Autorisierung benötigt.</div>
+              <div class="terminal-line">[SYS-CLUE] Geysier-Pfad Beweismittel-Index eingeben:</div>
+              
+              <div class="terminal-input-wrapper">
+                <span class="terminal-prompt">BEWEISSTÜCK #</span>
+                <input type="text" id="riddle-input" class="terminal-input" placeholder="CODE" maxlength="15" autocomplete="off">
+                <button id="riddle-submit" class="btn-terminal">DECODIEREN</button>
+              </div>
+
+              <!-- Terminal Output Log -->
+              <div id="riddle-output" class="terminal-output">
+                [SYSTEM] Warten auf Frequenzeingabe...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="content-section" id="download">
+      <div class="container">
+        <div class="download-layout">
+          <!-- Text and buttons -->
+          <div class="download-text-content reveal">
+            <span class="section-subtitle" style="text-align: left; display: inline-block;">Mission Starten</span>
+            <h2 class="download-title">Lade die Bündner Fallakten herunter</h2>
+            <p class="download-description">
+              Bist du bereit, deine Wanderschuhe zu schnüren und zum Detektiv zu werden? Lade die App kostenfrei herunter, schnapp dir dein Team (oder ermittle solo) und wähle deinen Fall vor Ort in Graubünden aus.
+            </p>
+            
+            <div class="store-badges">
+              <a href="#" class="store-badge" id="btn-app-store">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.82M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.58 2.95-1.39z"/>
+                </svg>
+                <span>
+                  <small>Laden im</small>
+                  App Store
+                </span>
+              </a>
+              <a href="#" class="store-badge" id="btn-google-play">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M5 3.23v17.54c0 .54.37.75.81.45l9.9-6.73 3.42-2.32c.38-.26.38-.68 0-.94l-3.42-2.32L5.81 2.78c-.44-.3-.81-.09-.81.45z"/>
+                </svg>
+                <span>
+                  <small>JETZT BEI</small>
+                  Google Play
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Phone mockup visual using ui.jpg -->
+          <div class="ui-showcase-container reveal">
+            <div class="glow-ambient"></div>
+            <div class="ui-image-wrapper">
+              <img src="ui.jpg" alt="Bündner Fallakten Smartphone Application Mockup Showcase" class="ui-mockup-image">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-layout">
+        <!-- Brand / Slogan -->
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-teal-neon);">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+            </svg>
+            BÜNDNER FALLAKTEN
+          </a>
+          <p>
+            Eine GPS-basierte Outdoor-Escape-App. Finde Beweise, knacke Rätsel und erlebe Wanderungen als packende Kriminalfälle.
+          </p>
+        </div>
+
+        <!-- Links column 1 -->
+        <div class="footer-links-col">
+          <h5>Ermittlungsgebiete</h5>
+          <ul>
+            <li><a href="#">Geysier-Pfad</a></li>
+            <li><a href="#">Alpen-Mysteriums-Pfad</a></li>
+            <li><a href="#">Schwarzwald-Geheimnisse</a></li>
+            <li><a href="#">Rheinschlucht-Verschwinden</a></li>
+          </ul>
+        </div>
+
+        <!-- Links column 2 -->
+        <div class="footer-links-col">
+          <h5>FH Graubünden</h5>
+          <ul>
+            <li><a href="#">Studiengang User Experience</a></li>
+            <li><a href="#">Kurs: Designing with AI</a></li>
+            <li><a href="#">Challenge A</a></li>
+            <li><a href="#">Support / Impressum</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Copyright / Sub info -->
+      <div class="footer-bottom">
+        <span class="footer-copyright">&copy; 2026 Die Bündner Fallakten. Alle Rechte vorbehalten.</span>
+        <span class="fhgr-tag">FS26 Designing with AI | Challenge A</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script file JS -->
+  <script src="script.js"></script>
+</body>
+</html>
