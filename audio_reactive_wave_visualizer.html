@@ -1,0 +1,273 @@
+
+<style>
+  h2.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+  * { box-sizing: border-box; }
+  #wrap { padding: 1rem 0; }
+  #vizCanvas {
+    display: block; width: 100%; height: 220px;
+    background: #0d0d14;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  .controls {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 24px;
+  }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row label { font-size: 13px; color: var(--color-text-secondary); width: 80px; flex-shrink: 0; }
+  .row input[type=range] { flex: 1; }
+  .row .val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 32px; text-align: right; }
+  .btn-row { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { font-size: 13px; padding: 6px 14px; }
+  #micBtn { min-width: 130px; }
+  #status { font-size: 12px; color: var(--color-text-secondary); }
+  .color-row { display: flex; gap: 8px; align-items: center; }
+  .swatch { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; }
+  .swatch.active { border-color: var(--color-text-primary); }
+  .mode-btns { display: flex; gap: 6px; }
+  .mode-btn { font-size: 12px; padding: 4px 10px; }
+  .mode-btn.active { background: var(--color-background-secondary); }
+</style>
+
+<h2 class="sr-only">Audio-reaktiver Wellen-Visualizer mit Mikrofon- und Slider-Steuerung</h2>
+<div id="wrap">
+  <canvas id="vizCanvas"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <label>Amplitude</label>
+      <input type="range" id="ampSlider" min="0" max="200" value="80" step="1">
+      <span class="val" id="ampVal">80</span>
+    </div>
+    <div class="row">
+      <label>Frequenz</label>
+      <input type="range" id="freqSlider" min="1" max="20" value="4" step="1">
+      <span class="val" id="freqVal">4</span>
+    </div>
+    <div class="row">
+      <label>Speed</label>
+      <input type="range" id="speedSlider" min="1" max="20" value="6" step="1">
+      <span class="val" id="speedVal">6</span>
+    </div>
+    <div class="row">
+      <label>Wellen</label>
+      <input type="range" id="wavesSlider" min="1" max="5" value="3" step="1">
+      <span class="val" id="wavesVal">3</span>
+    </div>
+
+    <div class="row" style="grid-column:1/-1">
+      <label>Farbe</label>
+      <div class="color-row">
+        <div class="swatch active" data-colors='["#378ADD","#85B7EB","#B5D4F4"]' style="background:#378ADD"></div>
+        <div class="swatch" data-colors='["#1D9E75","#5DCAA5","#9FE1CB"]' style="background:#1D9E75"></div>
+        <div class="swatch" data-colors='["#D4537E","#ED93B1","#F4C0D1"]' style="background:#D4537E"></div>
+        <div class="swatch" data-colors='["#EF9F27","#FAC775","#FAEEDA"]' style="background:#EF9F27"></div>
+        <div class="swatch" data-colors='["#7F77DD","#AFA9EC","#CECBF6"]' style="background:#7F77DD"></div>
+      </div>
+      <span style="margin-left:auto; font-size:12px; color:var(--color-text-secondary)">Modus:</span>
+      <div class="mode-btns">
+        <button class="mode-btn active" id="modeWave">Wellen</button>
+        <button class="mode-btn" id="modeBars">Bars</button>
+        <button class="mode-btn" id="modeCircle">Kreis</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button id="micBtn"><i class="ti ti-microphone" aria-hidden="true" style="margin-right:5px"></i>Mikrofon aktivieren</button>
+      <span id="status">Slider-Modus aktiv</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('vizCanvas');
+const ctx = canvas.getContext('2d');
+
+let amp = 80, freq = 4, speed = 6, waveCount = 3;
+let phase = 0;
+let micActive = false;
+let analyser = null, dataArray = null, audioCtx = null;
+let currentColors = ["#378ADD","#85B7EB","#B5D4F4"];
+let vizMode = 'wave';
+let animId = null;
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+
+function hex2rgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+function drawWaves(freqData) {
+  const W = canvas.getBoundingClientRect().width;
+  const H = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+
+  for (let w = 0; w < waveCount; w++) {
+    const t = w / waveCount;
+    const [r,g,b] = hex2rgb(currentColors[Math.min(w, currentColors.length-1)]);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.9 - t*0.35})`;
+    ctx.lineWidth = 2 - w*0.4;
+
+    let micBoost = 1;
+    if (freqData) {
+      const slice = Math.floor(freqData.length / waveCount);
+      let sum = 0;
+      for (let i = w*slice; i < (w+1)*slice; i++) sum += freqData[i];
+      micBoost = 0.5 + (sum / (slice * 255)) * 3.5;
+    }
+
+    for (let x = 0; x <= W; x++) {
+      const px = x / W;
+      const y = H/2
+        + Math.sin(px * freq * Math.PI * 2 + phase + w * 1.2) * amp * micBoost * (0.6 + t*0.4)
+        + Math.sin(px * freq * 1.7 * Math.PI * 2 + phase * 0.7 + w * 0.8) * amp * 0.3 * micBoost;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawBars(freqData) {
+  const W = canvas.getBoundingClientRect().width;
+  const H = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const barCount = 64;
+  const bw = W / barCount - 1;
+
+  for (let i = 0; i < barCount; i++) {
+    let h;
+    if (freqData) {
+      const idx = Math.floor(i * freqData.length / barCount);
+      h = (freqData[idx] / 255) * H * 0.9;
+    } else {
+      const t = Date.now() / 1000 * speed * 0.1;
+      h = (Math.sin(i * 0.3 + t) * 0.5 + 0.5) * amp * 1.5;
+      h = Math.max(4, h);
+    }
+    const ratio = i / barCount;
+    const ci = Math.min(Math.floor(ratio * currentColors.length), currentColors.length - 1);
+    const [r,g,b] = hex2rgb(currentColors[ci]);
+    ctx.fillStyle = `rgba(${r},${g},${b},0.85)`;
+    ctx.beginPath();
+    ctx.roundRect(i * (bw + 1), H - h, bw, h, 2);
+    ctx.fill();
+  }
+}
+
+function drawCircle(freqData) {
+  const W = canvas.getBoundingClientRect().width;
+  const H = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W/2, cy = H/2;
+  const baseR = Math.min(W,H) * 0.25;
+  const points = 128;
+
+  for (let w = 0; w < waveCount; w++) {
+    const [r,g,b] = hex2rgb(currentColors[Math.min(w, currentColors.length-1)]);
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${r},${g},${b},${0.9 - w*0.25})`;
+    ctx.lineWidth = 1.5;
+
+    for (let i = 0; i <= points; i++) {
+      const angle = (i / points) * Math.PI * 2;
+      let micBoost = 1;
+      if (freqData) {
+        const idx = Math.floor(i * freqData.length / points);
+        micBoost = 0.4 + (freqData[idx] / 255) * 2.5;
+      }
+      const r2 = baseR
+        + Math.sin(i / points * freq * Math.PI * 2 + phase + w * 1.3) * amp * 0.5 * micBoost;
+      const x = cx + Math.cos(angle) * r2;
+      const y = cy + Math.sin(angle) * r2;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+}
+
+function tick() {
+  phase += speed * 0.004;
+  let freqData = null;
+  if (analyser && micActive) {
+    analyser.getByteFrequencyData(dataArray);
+    freqData = dataArray;
+  }
+  if (vizMode === 'wave') drawWaves(freqData);
+  else if (vizMode === 'bars') drawBars(freqData);
+  else drawCircle(freqData);
+  animId = requestAnimationFrame(tick);
+}
+
+tick();
+
+function bindSlider(id, outId, setter) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(outId);
+  el.addEventListener('input', () => { setter(+el.value); out.textContent = el.value; });
+}
+bindSlider('ampSlider','ampVal', v => amp = v);
+bindSlider('freqSlider','freqVal', v => freq = v);
+bindSlider('speedSlider','speedVal', v => speed = v);
+bindSlider('wavesSlider','wavesVal', v => waveCount = v);
+
+document.querySelectorAll('.swatch').forEach(s => {
+  s.addEventListener('click', () => {
+    document.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+    currentColors = JSON.parse(s.dataset.colors);
+  });
+});
+
+['modeWave','modeBars','modeCircle'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function() {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    vizMode = id === 'modeWave' ? 'wave' : id === 'modeBars' ? 'bars' : 'circle';
+  });
+});
+
+const micBtn = document.getElementById('micBtn');
+const status = document.getElementById('status');
+
+micBtn.addEventListener('click', async () => {
+  if (micActive) {
+    micActive = false;
+    if (audioCtx) { audioCtx.close(); audioCtx = null; analyser = null; }
+    micBtn.innerHTML = '<i class="ti ti-microphone" aria-hidden="true" style="margin-right:5px"></i>Mikrofon aktivieren';
+    status.textContent = 'Slider-Modus aktiv';
+    return;
+  }
+  try {
+    status.textContent = 'Zugriff wird angefragt…';
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const src = audioCtx.createMediaStreamSource(stream);
+    src.connect(analyser);
+    micActive = true;
+    micBtn.innerHTML = '<i class="ti ti-microphone-off" aria-hidden="true" style="margin-right:5px"></i>Mikrofon deaktivieren';
+    status.textContent = 'Mikrofon aktiv — sprich oder sing!';
+  } catch(e) {
+    status.textContent = 'Zugriff verweigert oder nicht verfügbar.';
+  }
+});
+
+window.addEventListener('resize', () => { resize(); });
+</script>
