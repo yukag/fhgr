@@ -1,0 +1,128 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #1a0a2e;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  perspective: 800px;
+}
+
+.flip-word {
+  display: inline-flex;
+  gap: 0;
+  margin: 0 0.18em;
+}
+
+.flip-char {
+  display: inline-block;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 700;
+  font-style: italic;
+  color: #fff;
+  text-shadow:
+    0 0 12px #ff6ec7,
+    0 0 28px #ff6ec7,
+    0 0 55px #ff2d8a,
+    0 0 90px #ff6600;
+  transform-style: preserve-3d;
+  transform-origin: center top;
+  animation: none;
+  will-change: transform, opacity;
+}
+
+@keyframes flipIn {
+  0%   { transform: rotateX(-90deg); opacity: 0; }
+  60%  { transform: rotateX(12deg);  opacity: 1; }
+  80%  { transform: rotateX(-5deg);  opacity: 1; }
+  100% { transform: rotateX(0deg);   opacity: 1; }
+}
+
+@keyframes flipOut {
+  0%   { transform: rotateX(0deg);   opacity: 1; }
+  40%  { transform: rotateX(12deg);  opacity: 1; }
+  100% { transform: rotateX(90deg);  opacity: 0; }
+}
+
+.flip-char.flipping-out { animation: flipOut 0.35s cubic-bezier(.4,0,.2,1) forwards; }
+.flip-char.flipping-in  { animation: flipIn  0.45s cubic-bezier(.2,0,.1,1.4) forwards; }
+</style>
+
+<div class="stage">
+  <div id="text-container" style="display:flex;flex-wrap:wrap;justify-content:center;gap:0;align-items:baseline;"></div>
+</div>
+
+<script>
+const lines = ["Saturday Night Party", "Dance All Night Long", "Tropical Vibes Only"];
+let current = 0;
+
+const COLORS = [
+  { text: '#fff', glow1: '#ff6ec7', glow2: '#ff2d8a', glow3: '#ff6600' },
+  { text: '#fff', glow1: '#ffe066', glow2: '#ffb700', glow3: '#ff6600' },
+  { text: '#fff', glow1: '#7efff5', glow2: '#00e0c6', glow3: '#0099ff' },
+];
+
+function buildSpans(text, colorIdx) {
+  const c = COLORS[colorIdx];
+  const container = document.getElementById('text-container');
+  container.innerHTML = '';
+  const words = text.split(' ');
+  words.forEach((word, wi) => {
+    const wDiv = document.createElement('div');
+    wDiv.className = 'flip-word';
+    [...word].forEach(ch => {
+      const span = document.createElement('span');
+      span.className = 'flip-char';
+      span.textContent = ch;
+      span.style.color = c.text;
+      span.style.textShadow = `0 0 12px ${c.glow1}, 0 0 28px ${c.glow1}, 0 0 55px ${c.glow2}, 0 0 90px ${c.glow3}`;
+      wDiv.appendChild(span);
+    });
+    container.appendChild(wDiv);
+    if (wi < words.length - 1) {
+      const sp = document.createElement('span');
+      sp.style.display = 'inline-block';
+      sp.style.width = '0.3em';
+      container.appendChild(sp);
+    }
+  });
+}
+
+function animateIn(colorIdx) {
+  const chars = document.querySelectorAll('.flip-char');
+  chars.forEach((ch, i) => {
+    ch.style.animationDelay = `${i * 0.03}s`;
+    ch.classList.remove('flipping-out');
+    void ch.offsetWidth;
+    ch.classList.add('flipping-in');
+  });
+}
+
+function cycle() {
+  const chars = document.querySelectorAll('.flip-char');
+  const total = chars.length;
+  chars.forEach((ch, i) => {
+    ch.style.animationDelay = `${i * 0.03}s`;
+    ch.classList.remove('flipping-in');
+    void ch.offsetWidth;
+    ch.classList.add('flipping-out');
+  });
+  const outDuration = total * 30 + 400;
+  setTimeout(() => {
+    current = (current + 1) % lines.length;
+    const colorIdx = current % COLORS.length;
+    buildSpans(lines[current], colorIdx);
+    animateIn(colorIdx);
+  }, outDuration);
+}
+
+buildSpans(lines[0], 0);
+animateIn(0);
+setInterval(cycle, 3200);
+</script>

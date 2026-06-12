@@ -1,0 +1,256 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&family=Inter:wght@400;500&display=swap');
+
+.scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 560px;
+  background: linear-gradient(135deg, #1a0020 0%, #2d0a1a 50%, #1a1000 100%);
+  border-radius: 16px;
+  padding: 2rem;
+}
+
+.card {
+  position: relative;
+  width: 350px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 16px;
+  backdrop-filter: blur(12px);
+  font-family: 'Inter', sans-serif;
+}
+
+.card-header { padding: 1.5rem 1.5rem 0.5rem; }
+
+.card-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ff9de2;
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  background: linear-gradient(90deg, #ff6ec7 0%, #ff9f43 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0 0 6px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.card-content { padding: 1.25rem 1.5rem; }
+
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+.field:last-child { margin-bottom: 0; }
+
+.field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.02em;
+}
+
+.field input {
+  background: rgba(255,255,255,0.07);
+  border: 0.5px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.field input::placeholder { color: rgba(255,255,255,0.3); }
+.field input:focus {
+  border-color: #ff6ec7;
+  background: rgba(255,110,199,0.08);
+}
+
+.card-footer {
+  padding: 0 1.5rem 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+  background: linear-gradient(90deg, #ff3cac 0%, #ff9f43 100%);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: filter 0.15s, transform 0.1s;
+  width: 100%;
+}
+.submit-btn:hover { filter: brightness(1.1); }
+.submit-btn:active { transform: scale(0.98); }
+
+.beam-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.divider {
+  height: 0.5px;
+  background: rgba(255,255,255,0.08);
+  margin: 0 1.5rem 1.25rem;
+}
+
+.emoji-row {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 18px;
+  padding: 0.5rem 0 0.75rem;
+  letter-spacing: 2px;
+}
+
+.success-msg {
+  display: none;
+  text-align: center;
+  padding: 1rem;
+  font-size: 15px;
+  color: #ff9de2;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+}
+</style>
+
+<div class="scene">
+  <div class="card" id="card">
+    <canvas class="beam-canvas" id="beam"></canvas>
+
+    <div class="card-header">
+      <div class="emoji-row">🦩 🌺 🍹 🌸 ✨ 💖 🌴</div>
+      <p class="card-eyebrow">Saturday Night · Summer Party</p>
+      <h2 class="card-title">Tropical Flamingo Night</h2>
+      <p class="card-desc">Reserve your spot at the hottest summer party of the year. Drinks, dancing & flamingo vibes. 🌅</p>
+    </div>
+
+    <div class="card-content">
+      <div class="field">
+        <label for="name">Full name</label>
+        <input id="name" type="text" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input id="email" type="email" placeholder="you@example.com" />
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card-footer">
+      <button class="submit-btn" id="submit-btn" onclick="handleSubmit()">
+        Register to Event ✨
+      </button>
+    </div>
+
+    <div class="success-msg" id="success">
+      You're in! See you Saturday night 🦩🌴
+    </div>
+  </div>
+</div>
+
+<script>
+function handleSubmit() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  if (!name || !email) {
+    document.getElementById('name').style.borderColor = name ? '' : '#ff3c3c';
+    document.getElementById('email').style.borderColor = email ? '' : '#ff3c3c';
+    return;
+  }
+  document.querySelector('.card-content').style.display = 'none';
+  document.querySelector('.divider').style.display = 'none';
+  document.querySelector('.card-footer').style.display = 'none';
+  document.getElementById('success').style.display = 'block';
+}
+
+const canvas = document.getElementById('beam');
+const card = document.getElementById('card');
+
+function resize() {
+  canvas.width = card.offsetWidth;
+  canvas.height = card.offsetHeight;
+}
+resize();
+new ResizeObserver(resize).observe(card);
+
+const ctx = canvas.getContext('2d');
+let t = 0;
+const SIZE = 100;
+const SPEED = 0.003;
+
+function drawBeam(pos, perimeter, w, h, hueOffset) {
+  const r = 16;
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  for (let i = 0; i <= 12; i++) {
+    const frac = i / 12;
+    const hue = (hueOffset + frac * 80) % 360;
+    grad.addColorStop(frac, (i === 0 || i === 12) ? 'transparent' : `hsl(${hue},100%,65%)`);
+  }
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = `hsl(${(hueOffset + 40) % 360},100%,65%)`;
+  ctx.shadowBlur = 12;
+
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(w - r, 0);
+  ctx.arcTo(w, 0, w, r, r);
+  ctx.lineTo(w, h - r);
+  ctx.arcTo(w, h, w - r, h, r);
+  ctx.lineTo(r, h);
+  ctx.arcTo(0, h, 0, h - r, r);
+  ctx.lineTo(0, r);
+  ctx.arcTo(0, 0, r, 0, r);
+  ctx.closePath();
+
+  ctx.save();
+  ctx.setLineDash([SIZE, perimeter - SIZE]);
+  ctx.lineDashOffset = -pos + SIZE / 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function draw() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const perimeter = 2 * (w + h);
+  const pos1 = ((t * perimeter) % perimeter + perimeter) % perimeter;
+  const pos2 = (pos1 + perimeter / 2) % perimeter;
+  const hue = (t * 150) % 360;
+  drawBeam(pos1, perimeter, w, h, hue);
+  drawBeam(pos2, perimeter, w, h, (hue + 180) % 360);
+  t += SPEED;
+  requestAnimationFrame(draw);
+}
+draw();
+</script>

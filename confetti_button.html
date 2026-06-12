@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confetti Button</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ff6ec7 0%, #ff9a3c 50%, #ffe066 100%);
+      font-family: 'Pacifico', cursive;
+      overflow: hidden;
+    }
+
+    .scene {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    .subtitle {
+      font-family: 'Pacifico', cursive;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+
+    .confetti-btn {
+      position: relative;
+      padding: 16px 42px;
+      font-family: 'Pacifico', cursive;
+      font-size: 22px;
+      color: #fff;
+      background: linear-gradient(135deg, #ff4da6 0%, #ff8c42 100%);
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow:
+        0 4px 20px rgba(255, 77, 166, 0.55),
+        0 1px 0 rgba(255,255,255,0.25) inset;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      overflow: visible;
+      z-index: 10;
+    }
+
+    .confetti-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow:
+        0 8px 32px rgba(255, 77, 166, 0.65),
+        0 1px 0 rgba(255,255,255,0.25) inset;
+    }
+
+    .confetti-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* shimmer overlay on button */
+    .confetti-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.3) 50%, transparent 60%);
+      background-size: 200% 100%;
+      animation: shimmer 2.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+
+    /* Canvas for particles */
+    #canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="scene">
+    <p class="subtitle">✦ tap to celebrate ✦</p>
+    <button class="confetti-btn" id="btn">🦩 Let's Party!</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    const COLORS = [
+      '#ff4da6', '#ff85c8', '#ffb3dd', '#ff2d78',
+      '#ff8c42', '#ffcf56', '#ffe566',
+      '#ff6ec7', '#fc5bba', '#ffd6f0',
+      '#fff', '#ffecf6',
+      '#ff1493', '#ff69b4'
+    ];
+
+    const FLAMINGO_EMOJIS = ['🦩', '🌺', '🍹', '🌸', '✨', '💖', '🌴'];
+
+    let particles = [];
+
+    class Particle {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'confetti' | 'glitter' | 'emoji'
+        this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        this.vx = (Math.random() - 0.5) * (type === 'glitter' ? 6 : 12);
+        this.vy = Math.random() * -18 - 6;
+        this.gravity = type === 'glitter' ? 0.18 : 0.38;
+        this.drag = type === 'glitter' ? 0.97 : 0.985;
+        this.alpha = 1;
+        this.decay = type === 'glitter' ? 0.012 : 0.016;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = (Math.random() - 0.5) * 0.25;
+
+        if (type === 'confetti') {
+          this.w = Math.random() * 10 + 5;
+          this.h = Math.random() * 5 + 3;
+          this.shape = Math.random() > 0.5 ? 'rect' : 'circle';
+        } else if (type === 'glitter') {
+          this.size = Math.random() * 4 + 1.5;
+        } else {
+          this.emoji = FLAMINGO_EMOJIS[Math.floor(Math.random() * FLAMINGO_EMOJIS.length)];
+          this.size = Math.random() * 18 + 14;
+          this.vx *= 0.5;
+          this.vy *= 0.7;
+          this.decay = 0.01;
+        }
+      }
+
+      update() {
+        this.vx *= this.drag;
+        this.vy += this.gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.rotSpeed;
+        this.alpha -= this.decay;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        if (this.type === 'confetti') {
+          ctx.fillStyle = this.color;
+          if (this.shape === 'rect') {
+            ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+          } else {
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.w / 2, this.h / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (this.type === 'glitter') {
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = this.color;
+          ctx.shadowBlur = 6;
+          // diamond shape
+          ctx.beginPath();
+          ctx.moveTo(0, -this.size);
+          ctx.lineTo(this.size * 0.5, 0);
+          ctx.lineTo(0, this.size);
+          ctx.lineTo(-this.size * 0.5, 0);
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.font = `${this.size}px serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(this.emoji, 0, 0);
+        }
+
+        ctx.restore();
+      }
+
+      get alive() { return this.alpha > 0; }
+    }
+
+    function burst(x, y) {
+      // confetti
+      for (let i = 0; i < 80; i++) particles.push(new Particle(x, y, 'confetti'));
+      // glitter
+      for (let i = 0; i < 60; i++) particles.push(new Particle(x, y, 'glitter'));
+      // emojis
+      for (let i = 0; i < 8; i++) particles.push(new Particle(x, y, 'emoji'));
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.alive);
+      particles.forEach(p => { p.update(); p.draw(ctx); });
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    document.getElementById('btn').addEventListener('click', (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      burst(cx, cy);
+    });
+  </script>
+
+</body>
+</html>
