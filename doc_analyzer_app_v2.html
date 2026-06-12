@@ -1,0 +1,765 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,700&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#08080f;
+  --surface:#0e0e1a;
+  --surface2:#14141f;
+  --cyan:#00f5d4;
+  --cyan-dim:rgba(0,245,212,0.15);
+  --gold:#f5a623;
+  --text:#e8e8f0;
+  --muted:rgba(232,232,240,0.45);
+  --border:rgba(0,245,212,0.12);
+  --border-hover:rgba(0,245,212,0.3);
+  --font:'Space Grotesk',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
+}
+
+/* ── API KEY GATE ── */
+#api-gate{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:520px;
+  padding:2rem 1rem;
+  position:relative;
+}
+
+#gate-shader{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.gate-card{
+  position:relative;
+  z-index:2;
+  width:100%;
+  max-width:400px;
+  background:rgba(14,14,26,0.85);
+  border:0.5px solid var(--border-hover);
+  border-radius:16px;
+  padding:2rem;
+  display:flex;
+  flex-direction:column;
+  gap:1.25rem;
+}
+
+.gate-logo{
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:26px;
+  font-weight:700;
+  color:#fff;
+  text-align:center;
+  letter-spacing:-0.02em;
+}
+
+.gate-logo span{color:var(--cyan)}
+
+.gate-desc{
+  font-size:13px;
+  color:var(--muted);
+  text-align:center;
+  line-height:1.6;
+}
+
+.gate-field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.gate-label{
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
+.gate-input-wrap{
+  display:flex;
+  align-items:center;
+  background:rgba(255,255,255,0.05);
+  border:0.5px solid var(--border-hover);
+  border-radius:8px;
+  overflow:hidden;
+  transition:border-color 0.2s;
+}
+
+.gate-input-wrap:focus-within{
+  border-color:var(--cyan);
+}
+
+.gate-input{
+  flex:1;
+  padding:10px 12px;
+  background:transparent;
+  border:none;
+  outline:none;
+  font-family:var(--font);
+  font-size:13px;
+  color:var(--text);
+  letter-spacing:0.03em;
+}
+
+.gate-input::placeholder{color:rgba(232,232,240,0.25)}
+
+.gate-eye{
+  padding:0 12px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  transition:color 0.15s;
+}
+
+.gate-eye:hover{color:var(--cyan)}
+
+.gate-error{
+  font-size:12px;
+  color:#f87171;
+  display:none;
+}
+
+.gate-error.show{display:block}
+
+.gate-btn{
+  width:100%;
+  padding:11px;
+  background:var(--cyan);
+  color:#08080f;
+  font-family:var(--font);
+  font-size:14px;
+  font-weight:500;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  letter-spacing:0.01em;
+  transition:background 0.15s, transform 0.1s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.gate-btn:hover{background:#00dbbe}
+.gate-btn:active{transform:scale(0.98)}
+.gate-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+.gate-hint{
+  font-size:11px;
+  color:var(--muted);
+  text-align:center;
+  line-height:1.5;
+}
+
+.gate-hint a{color:var(--cyan);text-decoration:none}
+.gate-hint a:hover{text-decoration:underline}
+
+.gate-divider{
+  height:0.5px;
+  background:var(--border);
+}
+
+/* ── MAIN APP (hidden until key entered) ── */
+#app-root{display:none;flex-direction:column;flex:1}
+
+#shader-wrap{
+  position:relative;
+  width:100%;
+  height:220px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+#glsl{display:block;width:100%;height:100%}
+
+.hero-overlay{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.hero-title{
+  font-family:'Fraunces',serif;font-style:italic;
+  font-size:clamp(28px,5vw,48px);font-weight:700;
+  color:#fff;letter-spacing:-0.02em;
+  text-shadow:0 0 40px rgba(0,245,212,0.5);line-height:1.1;
+}
+.hero-sub{
+  font-size:12px;font-weight:400;color:var(--cyan);
+  letter-spacing:0.18em;text-transform:uppercase;margin-top:8px;opacity:0.85;
+}
+
+.key-badge{
+  position:absolute;top:12px;right:12px;
+  background:rgba(14,14,26,0.8);
+  border:0.5px solid var(--border-hover);
+  border-radius:20px;
+  padding:5px 12px;
+  font-size:11px;color:var(--cyan);
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;transition:background 0.15s;
+  pointer-events:all;
+}
+.key-badge:hover{background:rgba(14,14,26,0.95)}
+
+.app{display:grid;grid-template-columns:300px 1fr;gap:0;flex:1;min-height:0}
+
+.sidebar{
+  background:var(--surface);border-right:0.5px solid var(--border);
+  display:flex;flex-direction:column;padding:1.25rem;gap:1rem;overflow-y:auto;
+}
+.section-label{
+  font-size:10px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:4px;
+}
+.upload-zone{
+  border:1px dashed var(--border-hover);border-radius:10px;padding:1.25rem;
+  text-align:center;cursor:pointer;transition:all 0.2s;
+  background:var(--cyan-dim);position:relative;
+}
+.upload-zone:hover{border-color:var(--cyan);background:rgba(0,245,212,0.1)}
+.upload-zone.drag-over{border-color:var(--cyan);background:rgba(0,245,212,0.2);transform:scale(1.01)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-icon{font-size:28px;margin-bottom:8px}
+.upload-text{font-size:13px;color:var(--muted);line-height:1.5}
+.upload-text strong{color:var(--cyan);font-weight:500}
+
+.cam-wrap{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;display:none}
+.cam-wrap.visible{display:block}
+#cam-video{width:100%;height:100%;object-fit:cover;display:block}
+.cam-overlay{
+  position:absolute;inset:0;border:2px solid var(--cyan);border-radius:10px;
+  pointer-events:none;animation:cam-pulse 2s ease-in-out infinite;
+}
+@keyframes cam-pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.cam-btn-row{display:flex;gap:8px;margin-top:8px}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 16px;font-family:var(--font);font-size:13px;font-weight:500;
+  border-radius:8px;cursor:pointer;transition:all 0.15s;flex:1;
+}
+.btn-primary{background:var(--cyan);color:#08080f;border:none}
+.btn-primary:hover{background:#00dbbe;transform:translateY(-1px)}
+.btn-primary:active{transform:scale(0.97)}
+.btn-ghost{background:transparent;color:var(--text);border:0.5px solid var(--border-hover)}
+.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim)}
+
+.thumb-wrap{border-radius:8px;overflow:hidden;border:0.5px solid var(--border);position:relative;display:none}
+.thumb-wrap.visible{display:block}
+#preview-img{width:100%;height:auto;max-height:180px;object-fit:contain;background:#000}
+.thumb-label{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(8,8,15,0.85);padding:6px 10px;font-size:11px;color:var(--cyan);font-weight:500;
+}
+
+.prompt-wrap{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;overflow:hidden}
+.prompt-textarea{
+  width:100%;padding:10px 12px;background:transparent;border:none;outline:none;
+  font-family:var(--font);font-size:13px;color:var(--text);resize:none;line-height:1.5;
+}
+.prompt-textarea::placeholder{color:var(--muted)}
+.prompt-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;border-top:0.5px solid var(--border);
+}
+.prompt-hint{font-size:11px;color:var(--muted)}
+
+.main{display:flex;flex-direction:column;padding:1.25rem;gap:1rem;overflow-y:auto;background:var(--bg)}
+
+.analysis-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;position:relative}
+.analysis-header{padding:1rem 1.25rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px}
+.analysis-status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:background 0.3s}
+.analysis-status-dot.active{background:var(--cyan);animation:dot-blink 1s ease-in-out infinite}
+.analysis-status-dot.done{background:var(--gold);animation:none}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.analysis-title-text{font-size:14px;font-weight:500;color:var(--text)}
+.analysis-body{padding:1.25rem;min-height:200px}
+.placeholder-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;gap:12px;text-align:center}
+.placeholder-icon{font-size:40px;opacity:0.3}
+.placeholder-text{font-size:14px;color:var(--muted);max-width:280px;line-height:1.6}
+
+.result-section{margin-bottom:1.25rem}
+.result-section:last-child{margin-bottom:0}
+.result-tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-bottom:8px}
+.tag-cyan{background:rgba(0,245,212,0.15);color:var(--cyan)}
+.tag-gold{background:rgba(245,166,35,0.15);color:var(--gold)}
+.tag-purple{background:rgba(150,100,255,0.15);color:#c084fc}
+.result-content{font-size:14px;line-height:1.7;color:var(--text)}
+.result-content ul{padding-left:1.2rem;list-style:none}
+.result-content ul li{position:relative;padding-left:1rem;margin-bottom:4px}
+.result-content ul li::before{content:'›';position:absolute;left:0;color:var(--cyan);font-weight:600}
+.key-value-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
+.kv-item{background:var(--surface2);border-radius:8px;border:0.5px solid var(--border);padding:10px 12px}
+.kv-label{font-size:10px;color:var(--muted);font-weight:500;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:3px}
+.kv-value{font-size:13px;color:var(--text);font-weight:500}
+
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-item{background:var(--surface2);border-radius:8px;border:0.5px solid var(--border);padding:10px 14px;cursor:pointer;transition:border-color 0.15s}
+.history-item:hover{border-color:var(--cyan)}
+.history-item-q{font-size:12px;color:var(--muted);margin-bottom:4px}
+.history-item-preview{font-size:13px;color:var(--text);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--cyan);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#beam-canvas{position:absolute;inset:0;pointer-events:none;border-radius:inherit;width:100%;height:100%}
+
+#confetti-canvas{position:fixed;inset:0;pointer-events:none;z-index:9999}
+
+.toast{
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  background:var(--surface);border:0.5px solid var(--cyan);
+  border-radius:10px;padding:10px 16px;font-size:13px;color:var(--cyan);
+  transform:translateY(80px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);z-index:10000;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:2px}
+
+@media(max-width:600px){
+  .app{grid-template-columns:1fr}
+  .sidebar{border-right:none;border-bottom:0.5px solid var(--border)}
+}
+</style>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ── API KEY GATE ── -->
+<div id="api-gate">
+  <canvas id="gate-shader" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="gate-card">
+    <div class="gate-logo">Doc<span>Lens</span> AI</div>
+    <p class="gate-desc">Enter your Anthropic API key to unlock document analysis. Your key stays in-browser and is never stored.</p>
+    <div class="gate-divider"></div>
+    <div class="gate-field">
+      <label class="gate-label">Anthropic API Key</label>
+      <div class="gate-input-wrap" id="gate-input-wrap">
+        <input class="gate-input" id="api-key-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" />
+        <button class="gate-eye" id="eye-btn" aria-label="Toggle visibility" title="Show/hide key">
+          <i class="ti ti-eye" id="eye-icon"></i>
+        </button>
+      </div>
+      <span class="gate-error" id="gate-error">Key must start with <code>sk-ant-</code></span>
+    </div>
+    <button class="gate-btn" id="gate-submit">
+      <i class="ti ti-lock" aria-hidden="true"></i>
+      Enter DocLens
+    </button>
+    <p class="gate-hint">Get your key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>Your key is only used for API calls from this page.</p>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="app-root">
+  <div id="shader-wrap">
+    <canvas id="glsl"></canvas>
+    <div class="hero-overlay">
+      <h1 class="hero-title">DocLens AI</h1>
+      <p class="hero-sub">Vision · Analysis · Insight</p>
+    </div>
+    <button class="key-badge" id="change-key-btn" title="Change API key">
+      <i class="ti ti-lock" style="font-size:12px" aria-hidden="true"></i>
+      <span id="key-display">sk-ant-...</span>
+    </button>
+  </div>
+
+  <div class="app">
+    <aside class="sidebar">
+      <div>
+        <p class="section-label">Input</p>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept="image/*,.png,.jpg,.jpeg,.webp" />
+          <div class="upload-icon">📄</div>
+          <p class="upload-text"><strong>Drop document here</strong><br>or click to browse<br><span style="font-size:11px">PNG · JPG · WebP</span></p>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <p class="section-label" style="margin:0">Camera capture</p>
+          <button class="btn btn-ghost" id="cam-toggle-btn" style="padding:5px 10px;font-size:12px;flex:unset">Start</button>
+        </div>
+        <div class="cam-wrap" id="cam-wrap">
+          <video id="cam-video" autoplay playsinline muted></video>
+          <div class="cam-overlay"></div>
+        </div>
+        <div class="cam-btn-row" id="cam-btns" style="display:none">
+          <button class="btn btn-primary" id="snap-btn">📸 Snapshot</button>
+          <button class="btn btn-ghost" id="cam-stop-btn">Stop</button>
+        </div>
+      </div>
+      <div class="thumb-wrap" id="thumb-wrap">
+        <img id="preview-img" src="" alt="Preview" />
+        <div class="thumb-label" id="thumb-label">Document loaded</div>
+      </div>
+      <div>
+        <p class="section-label">Prompt</p>
+        <div class="prompt-wrap">
+          <textarea class="prompt-textarea" id="prompt-input" rows="3" placeholder="e.g. 'Extract key data points', 'Summarise this contract'..."></textarea>
+          <div class="prompt-footer">
+            <span class="prompt-hint">⌘ + Enter to analyse</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="analyse-btn" style="width:100%" disabled>
+        ✦ Analyse Document
+      </button>
+    </aside>
+
+    <main class="main">
+      <div class="analysis-card" id="analysis-card">
+        <canvas id="beam-canvas"></canvas>
+        <div class="analysis-header">
+          <div class="analysis-status-dot" id="status-dot"></div>
+          <span class="analysis-title-text" id="status-label">Waiting for document</span>
+        </div>
+        <div class="analysis-body" id="analysis-body">
+          <div class="placeholder-state" id="placeholder">
+            <div class="placeholder-icon">🔬</div>
+            <p class="placeholder-text">Upload a document or use your camera, then hit Analyse.</p>
+          </div>
+        </div>
+      </div>
+      <div id="history-wrap" style="display:none">
+        <p class="section-label" style="margin-bottom:8px">Previous analyses</p>
+        <div class="history-list" id="history-list"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── GATE SHADER (mini version for bg of key screen) ── */
+const gCanvas = document.getElementById('gate-shader');
+const gg = gCanvas.getContext('webgl');
+
+const GVS = `attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}`;
+const GFS = `
+precision mediump float;
+uniform float u_t;uniform vec2 u_r;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5);}
+float n(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.-2.*f);
+return mix(mix(h(i),h(i+vec2(1,0)),u.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),u.x),u.y);}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*u_r)/min(u_r.x,u_r.y);
+  float t=u_t*.3;
+  float f=n(uv*2.5+t*.5)*.5+n(uv*5.-t*.4)*.3+n(uv*1.5+t*.2)*.2;
+  vec3 c=mix(vec3(.03,.03,.07),vec3(.0,.6,.52),smoothstep(.4,.75,f)*.5);
+  c=mix(c,vec3(.96,.65,.14),smoothstep(.7,.9,f)*.15);
+  float v=1.-smoothstep(.4,1.2,length(uv));
+  gl_FragColor=vec4(c*v,1.);
+}`;
+
+function mkShader(gl,src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s}
+function mkProg(gl,vs,fs){const p=gl.createProgram();gl.attachShader(p,mkShader(gl,vs,gl.VERTEX_SHADER));gl.attachShader(p,mkShader(gl,fs,gl.FRAGMENT_SHADER));gl.linkProgram(p);return p}
+
+const gProg = mkProg(gg,GVS,GFS);
+gg.useProgram(gProg);
+const gBuf = gg.createBuffer();
+gg.bindBuffer(gg.ARRAY_BUFFER,gBuf);
+gg.bufferData(gg.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gg.STATIC_DRAW);
+const gPos=gg.getAttribLocation(gProg,'a');
+gg.enableVertexAttribArray(gPos);
+gg.vertexAttribPointer(gPos,2,gg.FLOAT,false,0,0);
+const guT=gg.getUniformLocation(gProg,'u_t');
+const guR=gg.getUniformLocation(gProg,'u_r');
+
+function resizeGate(){
+  const gate=document.getElementById('api-gate');
+  gCanvas.width=gate.clientWidth;gCanvas.height=gate.clientHeight;
+  gg.viewport(0,0,gCanvas.width,gCanvas.height);
+}
+resizeGate();
+
+let gStart=performance.now(),gAnimId=null;
+function renderGate(){
+  const t=(performance.now()-gStart)/1000;
+  gg.uniform1f(guT,t);gg.uniform2f(guR,gCanvas.width,gCanvas.height);
+  gg.drawArrays(gg.TRIANGLES,0,6);
+  gAnimId=requestAnimationFrame(renderGate);
+}
+renderGate();
+
+/* ── API KEY GATE LOGIC ── */
+let apiKey = '';
+const keyInput = document.getElementById('api-key-input');
+const gateError = document.getElementById('gate-error');
+const eyeBtn = document.getElementById('eye-btn');
+const eyeIcon = document.getElementById('eye-icon');
+
+eyeBtn.addEventListener('click',()=>{
+  const isPass = keyInput.type==='password';
+  keyInput.type = isPass?'text':'password';
+  eyeIcon.className = isPass?'ti ti-eye-off':'ti ti-eye';
+});
+
+keyInput.addEventListener('input',()=>{
+  gateError.classList.remove('show');
+  document.getElementById('gate-input-wrap').style.borderColor='';
+});
+
+keyInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter') submitKey();
+});
+
+document.getElementById('gate-submit').addEventListener('click', submitKey);
+
+function submitKey(){
+  const val = keyInput.value.trim();
+  if(!val.startsWith('sk-ant-') && !val.startsWith('sk-')){
+    gateError.classList.add('show');
+    document.getElementById('gate-input-wrap').style.borderColor='#f87171';
+    return;
+  }
+  apiKey = val;
+  const masked = val.substring(0,10)+'•••'+val.slice(-4);
+  document.getElementById('key-display').textContent = masked;
+
+  cancelAnimationFrame(gAnimId);
+  document.getElementById('api-gate').style.display='none';
+  const appRoot = document.getElementById('app-root');
+  appRoot.style.display='flex';
+  initMainApp();
+}
+
+document.getElementById('change-key-btn').addEventListener('click',()=>{
+  apiKey='';
+  document.getElementById('app-root').style.display='none';
+  document.getElementById('api-gate').style.display='flex';
+  keyInput.value='';
+  resizeGate();
+  renderGate();
+});
+
+/* ── MAIN APP SHADER ── */
+let glslCanvas, gl, uTime, uRes, uMouse, uPulse, mouseX=0, mouseY=0, pulse=0;
+
+function initMainApp(){
+  glslCanvas = document.getElementById('glsl');
+  gl = glslCanvas.getContext('webgl');
+
+  const VS=`attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}`;
+  const FS=`
+precision mediump float;
+uniform float u_time;uniform vec2 u_res;uniform vec2 u_mouse;uniform float u_pulse;
+vec3 pal(float t,vec3 a,vec3 b,vec3 c,vec3 d){return a+b*cos(6.28318*(c*t+d));}
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.-2.*f);
+return mix(mix(hash(i+vec2(0,0)),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}
+void main(){
+  vec2 uv=(gl_FragCoord.xy-.5*u_res)/min(u_res.x,u_res.y);
+  vec2 mouse=(u_mouse/u_res-.5);mouse.y*=-1.;
+  float t=u_time*.4;float dist=length(uv-mouse*1.2);
+  float n1=noise(uv*3.+t*.7);float n2=noise(uv*6.-t*.5+n1);float n3=noise(uv*2.+vec2(t*.3,t*.2));
+  float field=n1*.5+n2*.3+n3*.2+.15/(dist+.35)*u_pulse;
+  vec3 col=pal(field+t*.1,vec3(.08,.08,.12),vec3(.25,.35,.3),vec3(1.2,1.1,.9),vec3(.0,.15,.35));
+  col=mix(col,vec3(0.,1.,.83),smoothstep(.65,.8,field)*.45*(1.+u_pulse*.5));
+  col=mix(col,vec3(.96,.65,.14),smoothstep(.75,.9,field)*.25);
+  float vign=1.-smoothstep(.3,1.2,length(uv*vec2(.8,1.4)));col*=vign;
+  gl_FragColor=vec4(col,1.);}`;
+
+  const p=mkProg(gl,VS,FS);gl.useProgram(p);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  const pos=gl.getAttribLocation(p,'a_pos');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+  uTime=gl.getUniformLocation(p,'u_time');uRes=gl.getUniformLocation(p,'u_res');
+  uMouse=gl.getUniformLocation(p,'u_mouse');uPulse=gl.getUniformLocation(p,'u_pulse');
+
+  const wrap=document.getElementById('shader-wrap');
+  wrap.addEventListener('mousemove',e=>{const r=wrap.getBoundingClientRect();mouseX=e.clientX-r.left;mouseY=e.clientY-r.top;});
+
+  function resizeGL(){glslCanvas.width=wrap.clientWidth;glslCanvas.height=wrap.clientHeight;gl.viewport(0,0,glslCanvas.width,glslCanvas.height);}
+  resizeGL();new ResizeObserver(resizeGL).observe(wrap);
+
+  const shaderStart=performance.now();
+  function renderShader(){const t=(performance.now()-shaderStart)/1000;pulse=Math.max(0,pulse-0.02);gl.uniform1f(uTime,t);gl.uniform2f(uRes,glslCanvas.width,glslCanvas.height);gl.uniform2f(uMouse,mouseX,mouseY);gl.uniform1f(uPulse,pulse);gl.drawArrays(gl.TRIANGLES,0,6);requestAnimationFrame(renderShader);}
+  renderShader();
+
+  initBeam();
+  initCamera();
+  initUpload();
+  initConfetti();
+  initPrompt();
+}
+
+function triggerPulse(){pulse=1.5}
+
+/* ── BEAM ── */
+function initBeam(){
+  const bc=document.getElementById('beam-canvas');
+  const card=document.getElementById('analysis-card');
+  function rsz(){bc.width=card.offsetWidth;bc.height=card.offsetHeight;}
+  rsz();new ResizeObserver(rsz).observe(card);
+  const ctx=bc.getContext('2d');
+  let bt=0,beamActive=false;
+  window._setBeam=v=>beamActive=v;
+  const SZ=120,SP=0.0025;
+  function drawB(pos,per,w,h,hue,al){
+    const r=12;const g=ctx.createLinearGradient(0,0,w,h);
+    for(let i=0;i<=10;i++){const f=i/10;const h2=(hue+f*60)%360;const a=(i===0||i===10)?0:al;g.addColorStop(f,`hsla(${h2},100%,65%,${a})`);}
+    ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.shadowColor=`hsl(${hue},100%,65%)`;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(r,0);ctx.lineTo(w-r,0);ctx.arcTo(w,0,w,r,r);ctx.lineTo(w,h-r);ctx.arcTo(w,h,w-r,h,r);ctx.lineTo(r,h);ctx.arcTo(0,h,0,h-r,r);ctx.lineTo(0,r);ctx.arcTo(0,0,r,0,r);ctx.closePath();
+    ctx.save();ctx.setLineDash([SZ,per-SZ]);ctx.lineDashOffset=-pos+SZ/2;ctx.stroke();ctx.restore();
+  }
+  function loop(){
+    const w=bc.width,h=bc.height;ctx.clearRect(0,0,w,h);
+    if(beamActive){const per=2*(w+h);const p1=((bt*per)%per+per)%per;const p2=(p1+per/2)%per;drawB(p1,per,w,h,174,0.9);drawB(p2,per,w,h,354,0.6);bt+=SP;}
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+/* ── CONFETTI ── */
+function initConfetti(){
+  const cc=document.getElementById('confetti-canvas');
+  const ctx=cc.getContext('2d');
+  cc.width=window.innerWidth;cc.height=window.innerHeight;
+  window.addEventListener('resize',()=>{cc.width=window.innerWidth;cc.height=window.innerHeight;});
+  const COLS=['#00f5d4','#00dbbe','#f5a623','#c084fc','#fff'];
+  let parts=[];
+  class P{constructor(x,y){this.x=x;this.y=y;this.color=COLS[Math.floor(Math.random()*COLS.length)];this.vx=(Math.random()-.5)*12;this.vy=Math.random()*-16-4;this.grav=0.4;this.drag=0.985;this.alpha=1;this.decay=0.015;this.rot=Math.random()*Math.PI*2;this.rs=(Math.random()-.5)*0.2;this.w=Math.random()*10+4;this.h=Math.random()*5+2;this.shape=Math.random()>.5?'rect':'circle';}
+    update(){this.vx*=this.drag;this.vy+=this.grav;this.x+=this.vx;this.y+=this.vy;this.rot+=this.rs;this.alpha-=this.decay;}
+    draw(){ctx.save();ctx.globalAlpha=Math.max(0,this.alpha);ctx.translate(this.x,this.y);ctx.rotate(this.rot);ctx.fillStyle=this.color;ctx.shadowColor=this.color;ctx.shadowBlur=4;if(this.shape==='rect'){ctx.fillRect(-this.w/2,-this.h/2,this.w,this.h);}else{ctx.beginPath();ctx.ellipse(0,0,this.w/2,this.h/2,0,0,Math.PI*2);ctx.fill();}ctx.restore();}
+    get alive(){return this.alpha>0}}
+  window._burst=(x,y)=>{for(let i=0;i<80;i++)parts.push(new P(x,y));};
+  function loop(){ctx.clearRect(0,0,cc.width,cc.height);parts=parts.filter(p=>p.alive);parts.forEach(p=>{p.update();p.draw();});requestAnimationFrame(loop);}
+  loop();
+}
+
+/* ── CAMERA ── */
+let stream=null;
+function initCamera(){
+  const camWrap=document.getElementById('cam-wrap');
+  const camBtns=document.getElementById('cam-btns');
+  const camVideo=document.getElementById('cam-video');
+  const camToggle=document.getElementById('cam-toggle-btn');
+  camToggle.addEventListener('click',async()=>{
+    if(!stream){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});camVideo.srcObject=stream;camWrap.classList.add('visible');camBtns.style.display='flex';camToggle.textContent='Active';camToggle.style.color='var(--cyan)';}catch(e){showToast('Camera access denied');}}
+  });
+  document.getElementById('cam-stop-btn').addEventListener('click',()=>{
+    if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}camWrap.classList.remove('visible');camBtns.style.display='none';camToggle.textContent='Start';camToggle.style.color='';
+  });
+  document.getElementById('snap-btn').addEventListener('click',()=>{
+    const s=document.createElement('canvas');s.width=camVideo.videoWidth;s.height=camVideo.videoHeight;s.getContext('2d').drawImage(camVideo,0,0);loadImagePreview(s.toDataURL('image/jpeg',0.85),'Camera snapshot');
+  });
+}
+
+/* ── UPLOAD ── */
+let currentImage=null;
+function initUpload(){
+  const fi=document.getElementById('file-input');
+  const uz=document.getElementById('upload-zone');
+  fi.addEventListener('change',e=>{const f=e.target.files[0];if(f)handleFile(f);});
+  uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag-over');});
+  uz.addEventListener('dragleave',()=>uz.classList.remove('drag-over'));
+  uz.addEventListener('drop',e=>{e.preventDefault();uz.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+}
+
+function handleFile(file){const r=new FileReader();r.onload=e=>loadImagePreview(e.target.result,file.name);r.readAsDataURL(file);}
+
+function loadImagePreview(dataUrl,label){
+  currentImage=dataUrl;
+  document.getElementById('preview-img').src=dataUrl;
+  document.getElementById('thumb-label').textContent=label;
+  document.getElementById('thumb-wrap').classList.add('visible');
+  document.getElementById('analyse-btn').disabled=false;
+  setStatus('ready','Document ready — run analysis');
+  triggerPulse();
+}
+
+/* ── PROMPT ── */
+function initPrompt(){
+  const pi=document.getElementById('prompt-input');
+  pi.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')runAnalysis();});
+  document.getElementById('analyse-btn').addEventListener('click',runAnalysis);
+}
+
+/* ── STATUS ── */
+function setStatus(state,label){
+  const dot=document.getElementById('status-dot');
+  dot.className='analysis-status-dot';
+  if(state==='active')dot.classList.add('active');
+  if(state==='done')dot.classList.add('done');
+  document.getElementById('status-label').textContent=label;
+}
+
+/* ── ANALYSIS ── */
+let analysisHistory=[];
+
+async function runAnalysis(){
+  if(!currentImage||!apiKey)return;
+  const prompt=document.getElementById('prompt-input').value.trim()||'Analyse this document. Extract key information, structure, and insights. Respond ONLY in JSON with: {"docType":"...","summary":"...","keyPoints":["..."],"entities":{"Field":"Value"},"insights":"..."}';
+  setStatus('active','Analysing…');
+  window._setBeam(true);triggerPulse();
+  const body=document.getElementById('analysis-body');
+  body.innerHTML=`<div class="placeholder-state"><div class="spinner"></div><p style="color:var(--muted);font-size:13px;margin-top:12px">Vision model processing document…</p></div>`;
+  document.getElementById('analyse-btn').disabled=true;
+  const base64=currentImage.split(',')[1];
+  const mime=currentImage.match(/data:([^;]+)/)?.[1]||'image/jpeg';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:base64}},{type:'text',text:prompt+'\n\nRespond ONLY in JSON, no markdown, no backticks. Structure: {"docType":"...","summary":"...","keyPoints":["..."],"entities":{"Field":"Value"},"insights":"..."}'}]}]})
+    });
+    if(res.status===401){showToast('Invalid API key — please re-enter');window._setBeam(false);setStatus('error','Authentication failed');document.getElementById('analyse-btn').disabled=false;return;}
+    const data=await res.json();
+    const raw=data.content?.map(b=>b.text||'').join('');
+    let parsed;try{parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch{parsed=null;}
+    window._setBeam(false);setStatus('done','Analysis complete');
+    if(parsed){renderResult(parsed);addHistory(document.getElementById('prompt-input').value||'Document analysis',parsed.summary);triggerConfetti();}
+    else{renderRaw(raw);}
+  }catch(e){window._setBeam(false);setStatus('error','Analysis failed');body.innerHTML=`<div class="placeholder-state"><p style="color:#f87171;font-size:14px">⚠ Network error. Check connection.</p></div>`;}
+  document.getElementById('analyse-btn').disabled=false;
+}
+
+function renderResult(d){
+  const body=document.getElementById('analysis-body');
+  const entryHTML=d.entities&&Object.keys(d.entities).length?`<div class="key-value-grid">${Object.entries(d.entities).map(([k,v])=>`<div class="kv-item"><div class="kv-label">${k}</div><div class="kv-value">${v}</div></div>`).join('')}</div>`:'';
+  const pointsHTML=d.keyPoints?.length?`<ul>${d.keyPoints.map(p=>`<li>${p}</li>`).join('')}</ul>`:'';
+  body.innerHTML=`
+    <div class="result-section"><span class="result-tag tag-cyan">${d.docType||'Document'}</span><div class="result-content" style="font-style:italic;color:var(--muted)">${d.summary||''}</div></div>
+    ${entryHTML?`<div class="result-section"><span class="result-tag tag-gold">Key data</span>${entryHTML}</div>`:''}
+    ${pointsHTML?`<div class="result-section"><span class="result-tag tag-purple">Key points</span><div class="result-content">${pointsHTML}</div></div>`:''}
+    ${d.insights?`<div class="result-section"><span class="result-tag tag-cyan">Insights</span><div class="result-content">${d.insights}</div></div>`:''}`;
+}
+
+function renderRaw(text){document.getElementById('analysis-body').innerHTML=`<div class="result-section"><span class="result-tag tag-cyan">Response</span><div class="result-content" style="white-space:pre-wrap;font-family:monospace;font-size:12px">${text}</div></div>`;}
+
+function addHistory(q,preview){
+  analysisHistory.unshift({q,preview});
+  const wrap=document.getElementById('history-wrap');const list=document.getElementById('history-list');
+  wrap.style.display='block';
+  list.innerHTML=analysisHistory.slice(0,5).map(h=>`<div class="history-item"><div class="history-item-q">Q: ${h.q.substring(0,60)}${h.q.length>60?'…':''}</div><div class="history-item-preview">${h.preview||''}</div></div>`).join('');
+}
+
+function triggerConfetti(){const btn=document.getElementById('analyse-btn');const r=btn.getBoundingClientRect();window._burst(r.left+r.width/2,r.top+r.height/2);triggerPulse();}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
